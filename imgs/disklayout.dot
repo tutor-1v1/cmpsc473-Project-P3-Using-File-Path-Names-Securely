@@ -1,0 +1,130 @@
+digraph G {
+  rankdir=LR
+  nodesep=0.1
+  ranksep=.5
+  graph [fontname=helvetica, fontsize=11]
+  node  [fontname=helvetica, fontsize=10, shape=record, margin=.05]
+  edge  [fontname=helvetica, fontsize=10, style=invis]
+
+  label = <<b>On-disk Layout</b>>
+
+  subgraph cluster_legend {
+    label = <<b>Legend</b>>
+    labelloc = "b"
+    style=filled
+    color=beige
+
+    blkhdr [ // color=blue, fontcolor=blue
+      label=
+        " { isfree \n or type | bitmap \n or size }
+        | next
+        "
+    ]
+    blkhdrlabel [label=<<b>dblock_t</b>>, shape=plain]
+  }
+
+
+  subgraph cluster_superblock {
+    label = "Block #0"
+    labelloc = "b"
+    superblock [label="<f0>bsize|<free>firstfree|root"]
+    superblocklabel [label=<<b>dfilesys_t</b>>, shape=plain]
+  }
+
+  subgraph cluster_1 {
+    label = "Block #1"
+    labelloc = "b"
+    rank=same
+    ddir1 [
+      label=
+        " { <bkt> buckets | freeblk | flags | <free> free }
+        | { <dentry0> ndentry | <slot0> nslot}
+        | { ndentry | nslot}
+        | { ... }
+        "
+     ]
+    ddir1label [label=<<b>ddir_t</b>>, shape=plain]
+  }
+
+  subgraph cluster_2 {
+    label = "Block #2"
+    labelloc = "b"
+    rank=same
+    // blk2hdr [
+    //   label=
+    //     " <free> free=3
+    //     | dentry_map=0x3FE
+    //     | next=BLK_INVALID
+    //     "
+    // ]
+    // blk2hdrlabel [label=<<b>dblock_t</b>>, shape=plain]
+    blk2hdrlabel [label=<<b>HEADER: dblock_t</b>>, shape=plain, fontcolor=blue]
+    ddentry1 [
+      label=
+        " {<r1>block| { <d1>ndentry | <s1>nslot } | type | name | name_size}
+        | {<r2>block| { <d2>ndentry | <s2>nslot } | type | name | name_size}
+        | <etc> ...
+        "
+    ]
+    ddentry1label [label=<<b>ddentry_t</b>>, shape=plain]
+  }
+
+  subgraph cluster_3 {
+    label = "Block #3"
+    labelloc = "b"
+    rank=same
+    blk3hdrlabel [label=<<b>HEADER: dblock_t</b>>, shape=plain, fontcolor=blue]
+    fcb1 [
+      label=
+        " {<fields>flags|uid|type|size|attrblk}
+        | <b0>block[0]
+        | <b1>block[1]
+        | ...
+        "
+    ]
+    fcb1label [label=<<b>fcb_t</b>>, shape=plain]
+  }
+
+  subgraph cluster_4 {
+    label = "Block #4"
+    labelloc = "b"
+    rank=same
+    blk4hdrlabel [label=<<b>HEADER: dblock_t</b>>, shape=plain, fontcolor=blue]
+    fileb0 [label=<<b>(raw file data)</b>>, shape=plaintext]
+  }
+
+  subgraph cluster_5 {
+    label = "Block #5"
+    labelloc = "b"
+    rank=same
+    blk5hdrlabel [label=<<b>HEADER: dblock_t</b>>, shape=plain, fontcolor=blue]
+    fileb1 [label=<<b>(raw file data)</b>>, shape=plaintext]
+  }
+
+  subgraph cluster_6 {
+    label = "Block #6"
+    labelloc = "b"
+    rank=same
+    blk6hdrlabel [label=<<b>HEADER: dblock_t</b>>, shape=plain, fontcolor=blue]
+    empty0 [label=<<b>(free)</b>>, shape=plaintext]
+  }
+
+
+  // Enforce ordering
+  superblock:f0 -> ddir1:bkt -> blk2hdrlabel ->
+    blk3hdrlabel -> blk4hdrlabel -> blk5hdrlabel -> blk6hdrlabel // [style=solid]
+
+  // Relations
+  edge [arrowsize=0.5, arrowhead=vee, arrowtail=dot, dir=both, tailclip=false]
+  edge [style=solid, constraint=false, color=blueviolet] // dir edges
+  ddir1:slot0 -> ddentry1:r1 -> fcb1:fields
+  ddir1:free -> ddentry1:etc
+  ddentry1:d1 -> ddentry1:r2
+
+  edge[color=forestgreen] // file edges
+  fcb1:b0 -> fileb0
+  fcb1:b1 -> fileb1
+
+  edge[color=red] // free list
+  superblock:free -> empty0 [color=red]
+}

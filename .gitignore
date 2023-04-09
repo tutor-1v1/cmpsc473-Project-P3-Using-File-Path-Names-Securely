@@ -1,0 +1,10 @@
+*.o
+._*
+.DS_Store
+cmpsc473-p3
+
+# Disk images
+*.img
+
+# Grading files
+eval/
